@@ -6,8 +6,9 @@
 
 **Conservative disk cleaner for Fedora and WSL.**
 
-Read-only by default · every deletion measured · nothing that cannot be rebuilt
+[Website & Terminal Simulator](https://dross.zhugez.workers.dev) · Read-only by default · every deletion measured · nothing that cannot be rebuilt
 
+[![website](https://img.shields.io/badge/website-dross.workers.dev-f5a524.svg)](https://dross.zhugez.workers.dev)
 [![ci](https://github.com/zhugez/dross/actions/workflows/ci.yml/badge.svg)](https://github.com/zhugez/dross/actions/workflows/ci.yml)
 [![license](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![rust](https://img.shields.io/badge/rust-1.70%2B-orange.svg)](Cargo.toml)
