@@ -1,5 +1,7 @@
 <div align="center">
 
+<img src="assets/logo.svg" width="104" alt="dross logo">
+
 # dross
 
 **Conservative disk cleaner for Fedora and WSL.**
