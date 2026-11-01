@@ -42,6 +42,7 @@ installed.
 dross                  # read-only report, deletes nothing
 dross plan safe        # print exactly what would be removed, deletes nothing
 dross clean safe       # remove safe tier, verify each target, log everything
+dross --help           # tiers, log location
 ```
 
 Exit codes: `0` success, `1` at least one target failed or was partially
@@ -100,7 +101,7 @@ tool cannot make for you.
 ## Development
 
 ```sh
-cargo test              # 10 integration + 3 unit tests
+cargo test              # 11 integration + 3 unit tests
 cargo clippy --all-targets -- -D warnings
 ```
 

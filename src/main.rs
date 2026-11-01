@@ -293,8 +293,24 @@ fn clean(tier: Tier, actions: Vec<Action>, home: &Path, log_path: &Path) -> i32 
     failed
 }
 
+fn help() -> ! {
+    out!(
+        "dross {} — conservative disk cleaner for Fedora and WSL",
+        dross::VERSION
+    );
+    out!("");
+    out!("usage:");
+    out!("  dross                          read-only report, deletes nothing");
+    out!("  dross plan  {{safe|cost|manual}}   show exactly what would be removed");
+    out!("  dross clean {{safe|cost|manual}}   remove, verify each target, log everything");
+    out!("");
+    out!("tiers: safe (cheap rebuild) < cost (expensive redownload) < manual (judgement)");
+    out!("log:   $XDG_STATE_HOME/dross.log");
+    process::exit(0);
+}
+
 fn usage() -> ! {
-    eprintln!("usage: dross | dross plan {{safe|cost|manual}} | dross clean {{safe|cost|manual}}");
+    eprintln!("usage: dross [plan|clean {{safe|cost|manual}}]   (dross --help for details)");
     process::exit(2);
 }
 
@@ -305,6 +321,11 @@ fn main() {
     let log_path = state_dir(&home).join("dross.log");
 
     let code = match (args.first().map(String::as_str), args.get(1)) {
+        (Some("--version" | "-V"), _) => {
+            out!("dross {}", dross::VERSION);
+            0
+        }
+        (Some("--help" | "-h"), _) => help(),
         (None, _) => {
             report(&scan(actions, &home), &home);
             0

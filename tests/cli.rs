@@ -232,11 +232,23 @@ fn partial_removal_exits_nonzero() {
 }
 
 #[test]
+fn version_and_help_exit_zero() {
+    let sandbox = Sandbox::new();
+    let version = sandbox.run(&["--version"]);
+    assert_eq!(version.status.code(), Some(0));
+    assert!(stdout_of(&version).starts_with("dross "));
+
+    let help = sandbox.run(&["--help"]);
+    assert_eq!(help.status.code(), Some(0));
+    assert!(stdout_of(&help).contains("usage:"));
+}
+
+#[test]
 fn bad_arguments_exit_two() {
     let sandbox = Sandbox::new();
     assert_eq!(sandbox.run(&["clean", "everything"]).status.code(), Some(2));
     assert_eq!(sandbox.run(&["plan"]).status.code(), Some(2));
-    assert_eq!(sandbox.run(&["--help"]).status.code(), Some(2));
+    assert_eq!(sandbox.run(&["--nonsense"]).status.code(), Some(2));
 }
 
 #[test]
