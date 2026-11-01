@@ -1,0 +1,12 @@
+{
+  "name": "dross",
+  "main": "src/index.js",
+  "compatibility_date": "2024-11-01",
+  "assets": {
+    "directory": "./public",
+    "binding": "ASSETS"
+  },
+  "observability": {
+    "enabled": true
+  }
+}

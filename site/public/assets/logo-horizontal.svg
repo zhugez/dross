@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 80" width="320" height="80" role="img" aria-label="dross brand lockup">
+  <defs>
+    <linearGradient id="amberGlow" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFB340"/>
+      <stop offset="100%" stop-color="#F5A524"/>
+    </linearGradient>
+  </defs>
+  <!-- Background plate (optional dark card) -->
+  <rect width="320" height="80" rx="14" fill="#111417"/>
+  <!-- Skimmer Mark -->
+  <g transform="translate(16, 12)">
+    <rect width="56" height="56" rx="12" fill="#181D23" stroke="#2A323D" stroke-width="1.5"/>
+    <rect x="10" y="34" width="36" height="13" rx="3" fill="url(#amberGlow)"/>
+    <rect x="20" y="28" width="22" height="3.5" rx="1.75" fill="#5A6570"/>
+    <rect x="10" y="21" width="27" height="3.5" rx="1.75" fill="#8B97A3"/>
+    <rect x="35" y="10" width="3.5" height="12" rx="1.75" fill="#8B97A3"/>
+  </g>
+  <!-- Wordmark -->
+  <text x="88" y="47" font-family="'JetBrains Mono', 'Space Mono', 'Fira Code', monospace" font-size="34" font-weight="800" letter-spacing="-1.5" fill="#F8FAFC">dross</text>
+  <!-- Version/Subtag -->
+  <rect x="208" y="27" width="52" height="20" rx="4" fill="#242B35"/>
+  <text x="214" y="41" font-family="'JetBrains Mono', monospace" font-size="11" font-weight="700" fill="#F5A524" letter-spacing="0.5">v0.1.0</text>
+  <text x="88" y="63" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif" font-size="11.5" font-weight="500" fill="#8B97A3" letter-spacing="0.2">conservative disk cleaner</text>
+</svg>

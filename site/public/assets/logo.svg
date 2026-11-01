@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128" role="img" aria-label="dross">
+  <title>dross</title>
+  <rect width="128" height="128" rx="26" fill="#111417"/>
+  <rect x="22" y="78" width="84" height="30" rx="6" fill="#F5A524"/>
+  <rect x="46" y="64" width="50" height="8" rx="4" fill="#5A6570"/>
+  <rect x="22" y="48" width="62" height="8" rx="4" fill="#8B97A3"/>
+  <rect x="80" y="24" width="8" height="28" rx="4" fill="#8B97A3"/>
+</svg>

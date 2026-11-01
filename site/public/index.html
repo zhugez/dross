@@ -1,0 +1,1454 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>dross — Conservative disk cleaner for Fedora and WSL</title>
+  <meta name="description" content="dross skims the worthless, regenerable cache from your Linux and WSL machine. Read-only by default, every deletion measured with du, zero guesswork.">
+  <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,400;0,500;0,700;0,800;1,400&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <style>
+    :root {
+      
+      --color-obsidian: #0A0D10;
+      --color-crucible: #111417;
+      --color-cast-iron: #181D23;
+      --color-cast-card: #1D232A;
+      --color-border: #2A323D;
+      --color-border-subtle: #1E252E;
+      --color-border-hover: #475569;
+      
+      --color-amber: #F5A524;
+      --color-amber-glow: rgba(245, 165, 36, 0.15);
+      --color-flame: #FF6B00;
+      --color-emerald: #10B981;
+      --color-emerald-glow: rgba(16, 185, 129, 0.15);
+      --color-crimson: #EF4444;
+      
+      --color-ingot: #F1F5F9;
+      --color-steel: #CBD5E1;
+      --color-ash: #8B97A3;
+      --color-charcoal: #475569;
+      
+      --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+      
+      --radius-sm: 4px;
+      --radius-md: 8px;
+      --radius-lg: 14px;
+      --radius-xl: 20px;
+      
+      --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+      --shadow-glow: 0 0 25px rgba(245, 165, 36, 0.12);
+      --shadow-card: 0 8px 30px rgba(0, 0, 0, 0.45);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--color-obsidian);
+      color: var(--color-steel);
+      font-family: var(--font-sans);
+      font-size: 15px;
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+      background-image: 
+        radial-gradient(ellipse 60% 40% at 50% -10%, rgba(245, 165, 36, 0.08), transparent 70%),
+        linear-gradient(to bottom, transparent 90%, rgba(0, 0, 0, 0.5));
+    }
+
+    
+    body::before {
+      content: "";
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: radial-gradient(circle at 50% 50%, rgba(255,255,255,0.015) 1px, transparent 1px);
+      background-size: 24px 24px;
+      pointer-events: none;
+      z-index: 100;
+    }
+
+    a {
+      color: var(--color-amber);
+      text-decoration: none;
+      transition: color 0.15s ease;
+    }
+    a:hover {
+      color: #ffbe53;
+    }
+
+    code, pre {
+      font-family: var(--font-mono);
+    }
+
+    .container {
+      max-width: 1120px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      background: rgba(10, 13, 16, 0.82);
+      border-bottom: 1px solid var(--color-border-subtle);
+    }
+
+    .nav-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 64px;
+    }
+
+    .brand-link {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      color: var(--color-ingot);
+      font-weight: 700;
+      font-size: 18px;
+      font-family: var(--font-mono);
+      letter-spacing: -0.5px;
+    }
+
+    .brand-link img {
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+    }
+
+    .badge-cleaner {
+      font-size: 10.5px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      background: var(--color-cast-iron);
+      color: var(--color-amber);
+      padding: 3px 8px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--color-border);
+    }
+
+    nav {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 20px;
+      list-style: none;
+    }
+
+    .nav-links a {
+      color: var(--color-ash);
+      font-size: 13.5px;
+      font-weight: 500;
+      transition: color 0.15s ease;
+    }
+    .nav-links a:hover {
+      color: var(--color-ingot);
+    }
+
+    .btn-github {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--color-cast-iron);
+      color: var(--color-ingot);
+      font-family: var(--font-mono);
+      font-size: 12.5px;
+      font-weight: 600;
+      padding: 7px 14px;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--color-border);
+      transition: all 0.2s ease;
+    }
+    .btn-github:hover {
+      background: var(--color-cast-card);
+      border-color: var(--color-border-hover);
+      color: #fff;
+    }
+
+    
+    .hero {
+      padding: 80px 0 60px;
+      text-align: center;
+      position: relative;
+    }
+
+    .hero-eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(245, 165, 36, 0.08);
+      border: 1px solid rgba(245, 165, 36, 0.28);
+      padding: 5px 14px;
+      border-radius: 999px;
+      color: var(--color-amber);
+      font-family: var(--font-mono);
+      font-size: 12px;
+      font-weight: 600;
+      margin-bottom: 24px;
+      letter-spacing: 0.2px;
+    }
+
+    .hero-eyebrow .dot {
+      width: 7px;
+      height: 7px;
+      background: var(--color-amber);
+      border-radius: 50%;
+      box-shadow: 0 0 8px var(--color-amber);
+    }
+
+    .hero h1 {
+      font-size: clamp(38px, 6vw, 62px);
+      font-weight: 800;
+      color: var(--color-ingot);
+      letter-spacing: -1.5px;
+      line-height: 1.1;
+      max-width: 860px;
+      margin: 0 auto 20px;
+    }
+
+    .hero h1 span.metal {
+      color: var(--color-amber);
+      position: relative;
+      display: inline-block;
+    }
+
+    .hero p.lead {
+      font-size: clamp(16px, 2.2vw, 19px);
+      color: var(--color-ash);
+      max-width: 680px;
+      margin: 0 auto 36px;
+      line-height: 1.55;
+    }
+
+    .hero-actions {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+      margin-bottom: 44px;
+    }
+
+    .install-bar {
+      display: flex;
+      align-items: center;
+      background: var(--color-crucible);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      padding: 4px 6px 4px 14px;
+      font-family: var(--font-mono);
+      font-size: 13px;
+      color: var(--color-ingot);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .install-bar .prompt {
+      color: var(--color-charcoal);
+      margin-right: 10px;
+      user-select: none;
+    }
+
+    .install-bar code {
+      margin-right: 14px;
+    }
+
+    .btn-copy {
+      background: var(--color-cast-card);
+      border: 1px solid var(--color-border);
+      color: var(--color-steel);
+      padding: 6px 12px;
+      border-radius: var(--radius-sm);
+      font-family: var(--font-mono);
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.15s ease;
+    }
+    .btn-copy:hover {
+      background: var(--color-border);
+      color: #fff;
+    }
+    .btn-copy.copied {
+      background: var(--color-emerald);
+      border-color: var(--color-emerald);
+      color: #000;
+    }
+
+    .btn-primary {
+      background: var(--color-amber);
+      color: #000;
+      font-weight: 700;
+      font-size: 13.5px;
+      padding: 10px 20px;
+      border-radius: var(--radius-md);
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      border: none;
+      cursor: pointer;
+      box-shadow: 0 4px 18px rgba(245, 165, 36, 0.28);
+      transition: all 0.15s ease;
+    }
+    .btn-primary:hover {
+      background: #ffb845;
+      color: #000;
+      transform: translateY(-1px);
+    }
+
+    
+    .metrics-strip {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-bottom: 60px;
+    }
+
+    .metric-card {
+      background: var(--color-crucible);
+      border: 1px solid var(--color-border-subtle);
+      border-radius: var(--radius-lg);
+      padding: 18px 20px;
+      text-align: left;
+    }
+
+    .metric-value {
+      font-family: var(--font-mono);
+      font-size: 24px;
+      font-weight: 800;
+      color: var(--color-ingot);
+      margin-bottom: 4px;
+    }
+
+    .metric-value.amber { color: var(--color-amber); }
+    .metric-value.emerald { color: var(--color-emerald); }
+
+    .metric-label {
+      font-size: 12.5px;
+      color: var(--color-ash);
+      font-weight: 500;
+    }
+
+    
+    .terminal-section {
+      margin-bottom: 90px;
+    }
+
+    .terminal-window {
+      background: #090B0E;
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-xl);
+      overflow: hidden;
+      box-shadow: var(--shadow-card), var(--shadow-glow);
+    }
+
+    .terminal-topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--color-crucible);
+      padding: 12px 18px;
+      border-bottom: 1px solid var(--color-border-subtle);
+      user-select: none;
+    }
+
+    .terminal-controls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .traffic-light {
+      width: 11px;
+      height: 11px;
+      border-radius: 50%;
+    }
+    .traffic-close { background: #FF5F56; }
+    .traffic-min { background: #FFBD2E; }
+    .traffic-max { background: #27C93F; }
+
+    .terminal-tabs {
+      display: flex;
+      gap: 6px;
+    }
+
+    .term-tab {
+      background: transparent;
+      border: 1px solid transparent;
+      color: var(--color-ash);
+      font-family: var(--font-mono);
+      font-size: 11.5px;
+      font-weight: 500;
+      padding: 5px 12px;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .term-tab:hover {
+      color: var(--color-ingot);
+      background: var(--color-cast-iron);
+    }
+
+    .term-tab.active {
+      background: var(--color-cast-card);
+      border-color: var(--color-border);
+      color: var(--color-amber);
+    }
+
+    .terminal-host-tag {
+      font-family: var(--font-mono);
+      font-size: 11.5px;
+      color: var(--color-charcoal);
+    }
+
+    .terminal-filter-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #0D1014;
+      padding: 8px 18px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      font-size: 12px;
+      font-family: var(--font-mono);
+    }
+
+    .filter-group {
+      display: flex;
+      gap: 8px;
+    }
+
+    .filter-btn {
+      background: transparent;
+      border: 1px solid var(--color-border-subtle);
+      color: var(--color-ash);
+      padding: 3px 9px;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      transition: all 0.15s ease;
+    }
+
+    .filter-btn:hover {
+      border-color: var(--color-border);
+      color: var(--color-ingot);
+    }
+
+    .filter-btn.active {
+      background: var(--color-cast-iron);
+      color: var(--color-amber);
+      border-color: var(--color-amber);
+    }
+
+    .terminal-body {
+      padding: 20px;
+      overflow-x: auto;
+      font-family: var(--font-mono);
+      font-size: 13px;
+      line-height: 1.65;
+      color: #E2E8F0;
+      white-space: pre;
+    }
+
+    .term-prompt-line {
+      color: var(--color-ash);
+      margin-bottom: 14px;
+    }
+    .term-prompt-line .p-host { color: var(--color-amber); }
+    .term-prompt-line .p-cmd { color: #fff; font-weight: 700; }
+
+    .term-table-hdr {
+      color: var(--color-charcoal);
+      font-weight: 700;
+      border-bottom: 1px solid var(--color-border-subtle);
+      padding-bottom: 4px;
+      margin-bottom: 6px;
+    }
+
+    .tier-badge {
+      display: inline-block;
+      padding: 0 4px;
+      border-radius: 3px;
+      font-weight: 700;
+      font-size: 11px;
+    }
+    .tier-badge.safe { color: var(--color-emerald); background: rgba(16, 185, 129, 0.12); }
+    .tier-badge.cost { color: var(--color-amber); background: rgba(245, 165, 36, 0.12); }
+    .tier-badge.manual { color: var(--color-crimson); background: rgba(239, 68, 68, 0.12); }
+
+    .term-row {
+      display: block;
+      transition: background 0.1s;
+    }
+    .term-row:hover {
+      background: rgba(255, 255, 255, 0.03);
+    }
+
+    .term-summary {
+      margin-top: 14px;
+      padding-top: 10px;
+      border-top: 1px dashed var(--color-border-subtle);
+      color: var(--color-amber);
+      font-weight: 600;
+    }
+
+    .term-docker-note {
+      color: var(--color-ash);
+      font-size: 12px;
+      margin-top: 8px;
+    }
+
+    
+    .section-title {
+      font-size: 12px;
+      font-family: var(--font-mono);
+      color: var(--color-amber);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 12px;
+    }
+
+    .section-headline {
+      font-size: clamp(28px, 4vw, 38px);
+      font-weight: 800;
+      color: var(--color-ingot);
+      letter-spacing: -0.8px;
+      line-height: 1.2;
+      margin-bottom: 16px;
+    }
+
+    .section-desc {
+      font-size: 16px;
+      color: var(--color-ash);
+      max-width: 640px;
+      line-height: 1.6;
+      margin-bottom: 44px;
+    }
+
+    
+    .tiers-section {
+      padding: 40px 0 90px;
+    }
+
+    .tiers-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 24px;
+    }
+
+    .tier-card {
+      background: var(--color-crucible);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-lg);
+      padding: 28px;
+      position: relative;
+      transition: all 0.2s ease;
+    }
+
+    .tier-card:hover {
+      border-color: var(--color-border-hover);
+      transform: translateY(-2px);
+    }
+
+    .tier-card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+
+    .tier-pill {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      font-weight: 700;
+      padding: 3px 10px;
+      border-radius: 999px;
+      text-transform: uppercase;
+    }
+    .tier-pill.safe { background: var(--color-emerald-glow); color: var(--color-emerald); border: 1px solid var(--color-emerald); }
+    .tier-pill.cost { background: var(--color-amber-glow); color: var(--color-amber); border: 1px solid var(--color-amber); }
+    .tier-pill.manual { background: rgba(239, 68, 68, 0.15); color: var(--color-crimson); border: 1px solid var(--color-crimson); }
+
+    .tier-action-tag {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--color-ash);
+    }
+
+    .tier-card h3 {
+      font-size: 20px;
+      color: var(--color-ingot);
+      font-weight: 700;
+      margin-bottom: 10px;
+    }
+
+    .tier-card p {
+      font-size: 14px;
+      color: var(--color-ash);
+      line-height: 1.55;
+      margin-bottom: 20px;
+    }
+
+    .tier-targets {
+      background: var(--color-obsidian);
+      border: 1px solid var(--color-border-subtle);
+      border-radius: var(--radius-md);
+      padding: 14px;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      list-style: none;
+    }
+
+    .tier-targets li {
+      padding: 4px 0;
+      display: flex;
+      justify-content: space-between;
+      border-bottom: 1px dashed rgba(255, 255, 255, 0.04);
+    }
+    .tier-targets li:last-child {
+      border-bottom: none;
+    }
+
+    .tier-targets span.item { color: var(--color-steel); }
+    .tier-targets span.path { color: var(--color-charcoal); }
+
+    
+    .rules-section {
+      padding: 40px 0 90px;
+      border-top: 1px solid var(--color-border-subtle);
+    }
+
+    .rules-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 20px;
+    }
+
+    .rule-box {
+      background: var(--color-crucible);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+    }
+
+    .rule-num {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--color-amber);
+      margin-bottom: 10px;
+    }
+
+    .rule-box h4 {
+      font-size: 17px;
+      color: var(--color-ingot);
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .rule-box p {
+      font-size: 13.5px;
+      color: var(--color-ash);
+      line-height: 1.5;
+    }
+
+    
+    
+
+    
+
+    @media (max-width: 768px) {
+      
+    }
+
+    .brandkit-intro h3 {
+      font-size: 20px;
+      color: var(--color-ingot);
+      margin-bottom: 12px;
+    }
+
+    .brandkit-intro p {
+      color: var(--color-ash);
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    
+
+    
+
+    
+
+    .swatch-color {
+      height: 72px;
+      position: relative;
+    }
+
+    .swatch-info {
+      padding: 12px 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: var(--color-cast-iron);
+    }
+
+    .swatch-name {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--color-ingot);
+    }
+
+    .swatch-hex {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: var(--color-ash);
+    }
+
+    
+    
+
+    
+
+    .logo-preview-box {
+      width: 100%;
+      height: 140px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--color-obsidian);
+      border: 1px solid var(--color-border-subtle);
+      border-radius: var(--radius-md);
+      margin-bottom: 16px;
+      padding: 16px;
+    }
+
+    
+
+    
+
+    .logo-actions {
+      display: flex;
+      gap: 8px;
+      width: 100%;
+    }
+
+    .btn-asset {
+      flex: 1;
+      background: var(--color-cast-iron);
+      border: 1px solid var(--color-border);
+      color: var(--color-steel);
+      padding: 7px 0;
+      border-radius: var(--radius-sm);
+      font-family: var(--font-mono);
+      font-size: 11.5px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .btn-asset:hover {
+      background: var(--color-border);
+      color: #fff;
+    }
+
+    
+    
+    @media (max-width: 768px) {
+      
+    }
+
+    
+
+    
+
+    .ascii-canvas {
+      background: var(--color-obsidian);
+      padding: 16px;
+      border-radius: var(--radius-md);
+      font-family: var(--font-mono);
+      font-size: 11px;
+      line-height: 1.35;
+      color: var(--color-amber);
+      overflow-x: auto;
+    }
+
+    
+    .wsl-section {
+      padding: 60px 0 90px;
+    }
+
+    .wsl-card {
+      background: linear-gradient(135deg, var(--color-crucible) 0%, #151A20 100%);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-xl);
+      padding: 36px;
+      display: grid;
+      grid-template-columns: 1.2fr 0.8fr;
+      gap: 36px;
+      align-items: center;
+    }
+
+    @media (max-width: 768px) {
+      .wsl-card { grid-template-columns: 1fr; }
+    }
+
+    .wsl-card h3 {
+      font-size: 24px;
+      color: var(--color-ingot);
+      font-weight: 800;
+      margin-bottom: 12px;
+    }
+
+    .wsl-card p {
+      color: var(--color-ash);
+      font-size: 14.5px;
+      line-height: 1.6;
+      margin-bottom: 20px;
+    }
+
+    .wsl-interactive {
+      background: var(--color-obsidian);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-lg);
+      padding: 20px;
+    }
+
+    .wsl-interactive label {
+      display: block;
+      font-size: 12px;
+      font-family: var(--font-mono);
+      color: var(--color-ash);
+      margin-bottom: 8px;
+    }
+
+    .wsl-interactive input[type="range"] {
+      width: 100%;
+      accent-color: var(--color-amber);
+      margin-bottom: 16px;
+    }
+
+    .wsl-calc-result {
+      background: var(--color-cast-iron);
+      padding: 12px;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--color-border-subtle);
+      font-family: var(--font-mono);
+      font-size: 12px;
+    }
+
+    
+    footer {
+      border-top: 1px solid var(--color-border-subtle);
+      padding: 60px 0 40px;
+      color: var(--color-charcoal);
+      font-size: 13px;
+    }
+
+    .footer-grid {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      flex-wrap: wrap;
+      gap: 24px;
+      margin-bottom: 40px;
+    }
+
+    .footer-brand {
+      max-width: 320px;
+    }
+
+    .footer-brand p {
+      color: var(--color-ash);
+      margin-top: 10px;
+      font-size: 13px;
+    }
+
+    .footer-links {
+      display: flex;
+      gap: 40px;
+    }
+
+    .footer-col h5 {
+      color: var(--color-ingot);
+      font-size: 13px;
+      font-family: var(--font-mono);
+      margin-bottom: 12px;
+    }
+
+    .footer-col ul {
+      list-style: none;
+    }
+
+    .footer-col li {
+      margin-bottom: 8px;
+    }
+
+    .footer-col a {
+      color: var(--color-ash);
+      font-size: 13px;
+    }
+    .footer-col a:hover {
+      color: var(--color-ingot);
+    }
+
+    .footer-bottom {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-top: 24px;
+      border-top: 1px solid rgba(255, 255, 255, 0.04);
+      font-family: var(--font-mono);
+      font-size: 11.5px;
+    }
+
+    
+    #toast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: var(--color-amber);
+      color: #000;
+      padding: 10px 18px;
+      border-radius: var(--radius-md);
+      font-family: var(--font-mono);
+      font-size: 12.5px;
+      font-weight: 700;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+      transform: translateY(100px);
+      opacity: 0;
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      z-index: 999;
+      pointer-events: none;
+    }
+    #toast.show {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  </style>
+</head>
+<body>
+
+  
+  <header>
+    <div class="container">
+      <div class="nav-inner">
+        <a href="#" class="brand-link">
+          <img src="assets/favicon.svg" alt="dross logo">
+          <span>dross</span>
+          <span class="badge-cleaner">Fedora & WSL</span>
+        </a>
+
+        <nav>
+          <ul class="nav-links">
+            <li><a href="#simulator">Terminal Scan</a></li>
+            <li><a href="#tiers">Tiers</a></li>
+            <li><a href="#rules">Guarantees</a></li>
+            <li><a href="#wsl">WSL Sparse</a></li>
+          </ul>
+
+          <a href="https://github.com/zhugez/dross" target="_blank" rel="noopener noreferrer" class="btn-github">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/>
+            </svg>
+            <span>v0.1.0</span>
+          </a>
+        </nav>
+      </div>
+    </div>
+  </header>
+
+  
+  <section class="hero">
+    <div class="container">
+      <div class="hero-eyebrow">
+        <span class="dot"></span>
+        <span>Molten metal skimmed. Zero speculative deletion.</span>
+      </div>
+
+      <h1>
+        Conservative disk cleaner for <span class="metal">Fedora and WSL</span>
+      </h1>
+
+      <p class="lead">
+        <code>dross</code> is the scum that floats to the top of molten metal in a blast furnace. 
+        It removes only what it can prove is worthless and regenerable — and tells you what it is about to do before touching a single byte.
+      </p>
+
+      <div class="hero-actions">
+        <div class="install-bar">
+          <span class="prompt">$</span>
+          <code>cargo install --git https://github.com/zhugez/dross</code>
+          <button class="btn-copy" onclick="copySnippet('cargo install --git https://github.com/zhugez/dross', this)">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+            </svg>
+            <span>Copy</span>
+          </button>
+        </div>
+
+        <a href="#simulator" class="btn-primary">
+          <span>Run Interactive Dry-Run</span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+            <polyline points="12 5 19 12 12 19"></polyline>
+          </svg>
+        </a>
+      </div>
+
+      
+      <div class="metrics-strip">
+        <div class="metric-card">
+          <div class="metric-value emerald">100%</div>
+          <div class="metric-label">Read-only by default (no silent deletions)</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-value amber">du Proof</div>
+          <div class="metric-label">Every byte measured before and after</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-value">0 Deps</div>
+          <div class="metric-label">Zero crates outside Rust coreutils</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-value emerald">Protected</div>
+          <div class="metric-label">Docker volumes are never automatically pruned</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  
+  <section class="terminal-section" id="simulator">
+    <div class="container">
+      <div class="terminal-window">
+        
+        <div class="terminal-topbar">
+          <div class="terminal-controls">
+            <span class="traffic-light traffic-close"></span>
+            <span class="traffic-light traffic-min"></span>
+            <span class="traffic-light traffic-max"></span>
+          </div>
+
+          <div class="terminal-tabs">
+            <button class="term-tab active" onclick="switchTermMode('scan', this)">1. dross (scan)</button>
+            <button class="term-tab" onclick="switchTermMode('plan', this)">2. dross plan safe</button>
+            <button class="term-tab" onclick="switchTermMode('clean', this)">3. dross clean safe</button>
+          </div>
+
+          <div class="terminal-host-tag">fedora-wsl: ~/repos/dross</div>
+        </div>
+
+        
+        <div class="terminal-filter-bar">
+          <div class="filter-group">
+            <span style="color: var(--color-charcoal); margin-right: 4px;">FILTER:</span>
+            <button class="filter-btn active" onclick="filterTiers('all', this)">All (16.1G)</button>
+            <button class="filter-btn" onclick="filterTiers('safe', this)">Safe Only (11.2G)</button>
+            <button class="filter-btn" onclick="filterTiers('cost', this)">Cost Only (4.9G)</button>
+            <button class="filter-btn" onclick="filterTiers('manual', this)">Manual Only (0B)</button>
+          </div>
+          <div style="color: var(--color-emerald)">✓ Safe tier ready for clean</div>
+        </div>
+
+        
+        <div class="terminal-body" id="term-content">
+          
+        </div>
+      </div>
+    </div>
+  </section>
+
+  
+  <section class="tiers-section" id="tiers">
+    <div class="container">
+      <div class="section-title">Metallurgical Tiers</div>
+      <h2 class="section-headline">Categorized by the cost of replacement</h2>
+      <p class="section-desc">
+        Not all caches are created equal. A Go compile cache is worthless disk weight; a 15GB HuggingFace model or Docker volume represents bandwidth and human hours.
+      </p>
+
+      <div class="tiers-grid">
+        
+        <div class="tier-card">
+          <div class="tier-card-header">
+            <span class="tier-pill safe">safe</span>
+            <span class="tier-action-tag">dross clean safe</span>
+          </div>
+          <h3>Pure Ephemeral Scum</h3>
+          <p>Trivially regenerable caches with zero download penalty. Rebuilds transparently on next build or install command.</p>
+          <ul class="tier-targets">
+            <li><span class="item">npm cache</span><span class="path">~/.npm/_cacache</span></li>
+            <li><span class="item">npx binary cache</span><span class="path">~/.npm/_npx</span></li>
+            <li><span class="item">dnf metadata</span><span class="path">~/.cache/libdnf5</span></li>
+            <li><span class="item">Go build artifacts</span><span class="path">~/.cache/go-build</span></li>
+            <li><span class="item">dnf package cache</span><span class="path">dnf clean all</span></li>
+          </ul>
+        </div>
+
+        
+        <div class="tier-card">
+          <div class="tier-card-header">
+            <span class="tier-pill cost">cost</span>
+            <span class="tier-action-tag">dross clean cost</span>
+          </div>
+          <h3>Expensive to Re-fetch</h3>
+          <p>Regenerable, but consumes noticeable internet bandwidth or compilation time when rebuilt. Skim only when disk is tight.</p>
+          <ul class="tier-targets">
+            <li><span class="item">HuggingFace models</span><span class="path">~/.cache/huggingface</span></li>
+            <li><span class="item">pip3 wheels cache</span><span class="path">pip3 cache purge</span></li>
+            <li><span class="item">cargo registry git/index</span><span class="path">~/.cargo/registry</span></li>
+            <li><span class="item">pnpm hardlink store</span><span class="path">pnpm store prune</span></li>
+            <li><span class="item">Playwright/Puppeteer</span><span class="path">~/.cache/ms-playwright</span></li>
+          </ul>
+        </div>
+
+        
+        <div class="tier-card">
+          <div class="tier-card-header">
+            <span class="tier-pill manual">manual</span>
+            <span class="tier-action-tag">explicit review only</span>
+          </div>
+          <h3>Human Judgement Demanded</h3>
+          <p>Operations that touch recoverable state, logs, or orphan packages. Never automated without conscious operator intent.</p>
+          <ul class="tier-targets">
+            <li><span class="item">Desktop Trash</span><span class="path">~/.local/share/Trash</span></li>
+            <li><span class="item">systemd journalctl</span><span class="path">journalctl --vacuum-size=200M</span></li>
+            <li><span class="item">dnf old kernels</span><span class="path">dnf remove --oldinstallonly</span></li>
+            <li><span class="item">docker images &amp; builder</span><span class="path">docker image prune -af</span></li>
+            <li><span class="item">Docker volumes</span><span class="path">NEVER pruned automatically</span></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  
+  <section class="rules-section" id="rules">
+    <div class="container">
+      <div class="section-title">The 5 Ironclad Guarantees</div>
+      <h2 class="section-headline">Why dross will never destroy your workstation</h2>
+      <p class="section-desc">
+        A disk cleaner that gets cute with wildcards is a time-bomb. dross is built on defensive systems invariants.
+      </p>
+
+      <div class="rules-grid">
+        <div class="rule-box">
+          <div class="rule-num">GUARANTEE 01</div>
+          <h4>Read-Only by Default</h4>
+          <p>Running <code>dross</code> without arguments performs a dry-run scan. Even <code>dross plan &lt;tier&gt;</code> only lists planned deletions. Deletion requires the explicit verb <code>clean</code>.</p>
+        </div>
+
+        <div class="rule-box">
+          <div class="rule-num">GUARANTEE 02</div>
+          <h4>Strict Inode &amp; Symlink Guard</h4>
+          <p>Every path is checked before deletion. Rejects paths outside <code>$HOME</code> and <code>/tmp</code>, paths shallower than 3 components (e.g. <code>~/.cache</code> is rejected), and any path with a symlink at or above it.</p>
+        </div>
+
+        <div class="rule-box">
+          <div class="rule-num">GUARANTEE 03</div>
+          <h4>Empirical `du` Proof</h4>
+          <p>No assumed numbers. Target sizes are measured with real <code>du</code> before and after. If a directory still exists after removal, dross flags a hard failure and exits with status <code>1</code>.</p>
+        </div>
+
+        <div class="rule-box">
+          <div class="rule-num">GUARANTEE 04</div>
+          <h4>Docker Volumes Are Sacred</h4>
+          <p>Volumes routinely host real production test databases. dross reports total reclaimable space and dangling counts, but <strong>refuses</strong> to prune docker volumes automatically.</p>
+        </div>
+
+        <div class="rule-box">
+          <div class="rule-num">GUARANTEE 05</div>
+          <h4>Full Audit Log</h4>
+          <p>Every execution is appended to <code>$XDG_STATE_HOME/dross.log</code> with the exact resolved timestamp, path, command, and measured freed space. Zero mystery.</p>
+        </div>
+
+        <div class="rule-box">
+          <div class="rule-num">GUARANTEE 06</div>
+          <h4>Zero Config Drift</h4>
+          <p>No sprawling JSON or YAML files that silently rot. The rules table is compiled directly into the binary in <code>src/rules.rs</code>. What was compiled is exactly what runs.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  
+  
+
+  
+  <section class="wsl-section" id="wsl">
+    <div class="container">
+      <div class="wsl-card">
+        <div>
+          <div class="section-title">WSL2 Specific Insight</div>
+          <h3>Why deleting files doesn't shrink your Windows drive</h3>
+          <p>
+            WSL stores Linux partitions inside dynamic <code>ext4.vhdx</code> files on NTFS. 
+            When you run <code>rm -rf</code> inside Linux, the ext4 filesystem frees inode blocks, 
+            but the Windows Virtual Hard Disk (.vhdx) never shrinks on its own.
+          </p>
+          <p>
+            After cleaning with <strong>dross</strong>, run this one-line command in Windows PowerShell to compact the VHDX:
+          </p>
+          <div class="install-bar" style="max-width: 500px;">
+            <span class="prompt">PS&gt;</span>
+            <code>wsl --manage Fedora --set-sparse true</code>
+            <button class="btn-copy" onclick="copySnippet('wsl --manage Fedora --set-sparse true', this)">Copy</button>
+          </div>
+        </div>
+
+        <div class="wsl-interactive">
+          <label for="sparse-slider">RECLAIMED LINUX CACHE (GB): <strong id="slider-val" style="color: var(--color-amber);">16 GB</strong></label>
+          <input type="range" id="sparse-slider" min="1" max="100" value="16" oninput="calcWslSparse(this.value)">
+
+          <div class="wsl-calc-result">
+            <div style="color: var(--color-ash); margin-bottom: 4px;">HOST WINDOWS NVME RECLAIM:</div>
+            <div style="font-size: 20px; font-weight: 800; color: var(--color-emerald);" id="reclaim-est">~16.0 GB returned to Windows C:\</div>
+            <div style="color: var(--color-charcoal); font-size: 11px; margin-top: 6px;">Zero downtime · Instant sparse hole punching</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  
+  <footer>
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <a href="#" class="brand-link">
+            <img src="assets/favicon.svg" alt="dross logo">
+            <span>dross</span>
+          </a>
+          <p>
+            Conservative disk cleaner for Fedora and WSL.<br>
+            Written in Rust with zero runtime dependencies.
+          </p>
+        </div>
+
+        <div class="footer-links">
+          <div class="footer-col">
+            <h5>Navigation</h5>
+            <ul>
+              <li><a href="#simulator">CLI Simulator</a></li>
+              <li><a href="#tiers">The 3 Tiers</a></li>
+              <li><a href="#rules">Guarantees</a></li>
+              <li><a href="#wsl">WSL Compaction</a></li>
+            </ul>
+          </div>
+
+          <div class="footer-col">
+            <h5>Ecosystem</h5>
+            <ul>
+              <li><a href="https://github.com/zhugez/dross" target="_blank">GitHub Repository</a></li>
+              <li><a href="https://github.com/zhugez/dross/blob/main/LICENSE" target="_blank">MIT License</a></li>
+              <li><a href="https://github.com/zhugez/dross/actions" target="_blank">CI Workflows</a></li>
+              <li><a href="https://github.com/zhugez/dross/issues" target="_blank">Issues &amp; Rules</a></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        <div>MIT License · Copyright &copy; 2026 dross authors</div>
+        <div style="color: var(--color-ash);">Deployed globally on Cloudflare Workers edge network</div>
+      </div>
+    </div>
+  </footer>
+
+  <div id="toast">Copied to clipboard</div>
+
+  <script>
+
+    const TERMINAL_DATA = {
+      scan: [
+        { size: '8.4G', tier: 'safe', item: 'npm cache', target: '~/.npm/_cacache' },
+        { size: '2.8G', tier: 'cost', item: 'pip package cache', target: 'pip3 cache purge' },
+        { size: '2.2G', tier: 'safe', item: 'npx package cache', target: '~/.npm/_npx' },
+        { size: '1.4G', tier: 'cost', item: 'HuggingFace models', target: '~/.cache/huggingface' },
+        { size: '721.1M', tier: 'cost', item: 'pnpm store', target: 'pnpm store prune' },
+        { size: '223.8M', tier: 'safe', item: 'dnf metadata cache', target: '~/.cache/libdnf5' },
+        { size: '218.9M', tier: 'safe', item: 'Go build cache', target: '~/.cache/go-build' },
+        { size: '118.9M', tier: 'safe', item: 'codeburn cache', target: '~/.cache/codeburn' },
+        { size: '98.4M', tier: 'safe', item: 'jstangle cache', target: '~/.cache/jstangle' },
+        { size: '-', tier: 'safe', item: 'dnf package cache', target: 'dnf clean all' },
+        { size: '-', tier: 'cost', item: 'uv package cache', target: 'uv cache clean' },
+        { size: '-', tier: 'cost', item: 'Puppeteer browsers', target: '~/.cache/puppeteer' },
+        { size: '-', tier: 'cost', item: 'Rod browsers', target: '~/.cache/rod' },
+        { size: '-', tier: 'cost', item: 'cargo registry', target: '~/.cargo/registry' },
+        { size: '-', tier: 'cost', item: 'Chromium asset cache', target: '~/.cache/chromium' },
+        { size: '-', tier: 'cost', item: 'Playwright browsers', target: '~/.cache/ms-playwright' },
+        { size: '-', tier: 'manual', item: 'Trash (recoverable files)', target: '~/.local/share/Trash [empty]' },
+        { size: '-', tier: 'manual', item: 'journal logs -> 200M', target: 'journalctl --vacuum-size=200M' },
+        { size: '-', tier: 'manual', item: 'dnf orphaned packages', target: 'dnf autoremove -y' },
+        { size: '-', tier: 'manual', item: 'old kernels (keep 2)', target: 'dnf remove --oldinstallonly' },
+        { size: '-', tier: 'manual', item: 'docker images', target: 'docker image prune -af' },
+        { size: '-', tier: 'manual', item: 'docker build cache', target: 'docker builder prune -af' },
+      ],
+      plan: [
+        { line: 'PLAN: removing [safe] tier targets (read-only verification):' },
+        { line: '  [dir]  ~/.npm/_cacache (8.4G) -> du -sh confirmed' },
+        { line: '  [dir]  ~/.npm/_npx (2.2G) -> du -sh confirmed' },
+        { line: '  [dir]  ~/.cache/libdnf5 (223.8M) -> du -sh confirmed' },
+        { line: '  [dir]  ~/.cache/go-build (218.9M) -> du -sh confirmed' },
+        { line: '  [dir]  ~/.cache/codeburn (118.9M) -> du -sh confirmed' },
+        { line: '  [dir]  ~/.cache/jstangle (98.4M) -> du -sh confirmed' },
+        { line: '  [cmd]  dnf clean all' },
+        { line: '--------------------------------------------------------------------------------------------' },
+        { line: 'Total planned deletion: 11.2G across 7 actions. Run "dross clean safe" to execute.' }
+      ],
+      clean: [
+        { line: 'CLEAN: executing [safe] tier cleanup with pre/post du verification:' },
+        { line: '  [OK]  ~/.npm/_cacache: removed 8.4G (post-check: 0B)' },
+        { line: '  [OK]  ~/.npm/_npx: removed 2.2G (post-check: 0B)' },
+        { line: '  [OK]  ~/.cache/libdnf5: removed 223.8M (post-check: 0B)' },
+        { line: '  [OK]  ~/.cache/go-build: removed 218.9M (post-check: 0B)' },
+        { line: '  [OK]  ~/.cache/codeburn: removed 118.9M (post-check: 0B)' },
+        { line: '  [OK]  ~/.cache/jstangle: removed 98.4M (post-check: 0B)' },
+        { line: '  [OK]  dnf clean all: exit status 0' },
+        { line: '--------------------------------------------------------------------------------------------' },
+        { line: '✓ SUCCESS: 11.2G reclaimed. Appended 7 entries to ~/.local/state/dross.log' },
+        { line: 'NOTE (WSL): run "wsl --manage Fedora --set-sparse true" in PowerShell to shrink host VHDX.' }
+      ]
+    };
+
+    let currentMode = 'scan';
+    let currentFilter = 'all';
+
+    function renderTerminal() {
+      const container = document.getElementById('term-content');
+      
+      if (currentMode === 'scan') {
+        let html = '<div class="term-prompt-line"><span class="p-host">dev@fedora</span>:<span class="p-cmd">~ $ dross</span></div>';
+        html += '<div class="term-table-hdr">    SIZE  TIER    ITEM                        TARGET</div>';
+        
+        const filtered = TERMINAL_DATA.scan.filter(row => {
+          if (currentFilter === 'all') return true;
+          return row.tier === currentFilter;
+        });
+
+        filtered.forEach(row => {
+          const padSize = (row.size + '      ').slice(0, 8);
+          const padItem = (row.item + '                           ').slice(0, 27);
+          html += `<div class="term-row">${padSize} <span class="tier-badge ${row.tier}">${row.tier.padEnd(6)}</span> ${padItem} ${row.target}</div>`;
+        });
+
+        html += '<div class="term-summary">safe=11.2G  cost=4.9G  manual=0B</div>';
+        html += '<div class="term-docker-note">docker: ~69.4G reclaimable across all object types, 8 dangling volume(s) — never pruned automatically\n        inspect: docker volume ls -f dangling=true</div>';
+        html += '<div style="color: var(--color-charcoal); margin-top: 10px;">dross plan TIER | dross clean TIER   (safe &lt; cost &lt; manual)</div>';
+        container.innerHTML = html;
+      } 
+      else if (currentMode === 'plan') {
+        let html = '<div class="term-prompt-line"><span class="p-host">dev@fedora</span>:<span class="p-cmd">~ $ dross plan safe</span></div>';
+        TERMINAL_DATA.plan.forEach(p => {
+          html += `<div>${p.line}</div>`;
+        });
+        container.innerHTML = html;
+      }
+      else if (currentMode === 'clean') {
+        let html = '<div class="term-prompt-line"><span class="p-host">dev@fedora</span>:<span class="p-cmd">~ $ dross clean safe</span></div>';
+        TERMINAL_DATA.clean.forEach(c => {
+          const isOk = c.line.includes('[OK]') || c.line.includes('SUCCESS');
+          const style = isOk ? 'color: var(--color-emerald);' : '';
+          html += `<div style="${style}">${c.line}</div>`;
+        });
+        container.innerHTML = html;
+      }
+    }
+
+    function switchTermMode(mode, btn) {
+      currentMode = mode;
+      document.querySelectorAll('.term-tab').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      renderTerminal();
+    }
+
+    function filterTiers(tier, btn) {
+      currentFilter = tier;
+      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      if (currentMode !== 'scan') {
+        currentMode = 'scan';
+        document.querySelectorAll('.term-tab').forEach((b, idx) => {
+          b.classList.toggle('active', idx === 0);
+        });
+      }
+      renderTerminal();
+    }
+
+    function calcWslSparse(val) {
+      document.getElementById('slider-val').innerText = val + ' GB';
+      document.getElementById('reclaim-est').innerText = `~${val}.0 GB returned to Windows C:\\`;
+    }
+
+    function showToast(msg) {
+      const t = document.getElementById('toast');
+      t.innerText = msg;
+      t.classList.add('show');
+      setTimeout(() => {
+        t.classList.remove('show');
+      }, 2000);
+    }
+
+    function copySnippet(text, btn) {
+      navigator.clipboard.writeText(text).then(() => {
+        showToast('Copied: ' + text);
+        if (btn) {
+          const original = btn.innerHTML;
+          btn.classList.add('copied');
+          setTimeout(() => btn.classList.remove('copied'), 1500);
+        }
+      });
+    }
+
+    function copySwatch(hex, name) {
+      navigator.clipboard.writeText(hex).then(() => {
+        showToast(`Copied ${name}: ${hex}`);
+      });
+    }
+
+    function copySvgUrl(url) {
+      fetch(url)
+        .then(r => r.text())
+        .then(svg => {
+          navigator.clipboard.writeText(svg).then(() => {
+            showToast('Copied raw SVG XML');
+          });
+        })
+        .catch(() => {
+          showToast('Failed to fetch SVG');
+        });
+    }
+
+    function copyAscii() {
+      const art = document.getElementById('ascii-art').innerText;
+      navigator.clipboard.writeText(art).then(() => {
+        showToast('Copied ASCII art');
+      });
+    }
+
+    renderTerminal();
+  </script>
+</body>
+</html>

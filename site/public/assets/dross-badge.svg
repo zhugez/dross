@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="138" height="28" viewBox="0 0 138 28" role="img" aria-label="dross: conservative">
+  <clipPath id="r">
+    <rect width="138" height="28" rx="4" fill="#fff"/>
+  </clipPath>
+  <g clip-path="url(#r)">
+    <rect width="52" height="28" fill="#111417"/>
+    <rect x="52" width="86" height="28" fill="#F5A524"/>
+    <rect id="y" width="138" height="28" fill="url(#g)"/>
+  </g>
+  <g fill="#fff" text-anchor="middle" font-family="'JetBrains Mono', 'Segoe UI', sans-serif" text-rendering="geometricPrecision" font-size="12">
+    <text x="26" y="18" fill="#E2E8F0" font-weight="700">dross</text>
+    <text x="94" y="18" fill="#111417" font-weight="700">conservative</text>
+  </g>
+</svg>
