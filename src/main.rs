@@ -60,7 +60,11 @@ fn scan(actions: Vec<Action>, home: &Path) -> Vec<Entry> {
         .map(|action| {
             let resolved = resolve(&action, home);
             let size = match action.kind {
-                Kind::Cmd => 0,
+                Kind::Cmd => action
+                    .measure
+                    .as_ref()
+                    .map(|path| du(Path::new(path)))
+                    .unwrap_or(0),
                 _ => match fs::symlink_metadata(&action.target) {
                     Ok(_) => du(Path::new(&action.target)),
                     Err(_) => 0,
@@ -132,7 +136,7 @@ fn plan(tier: Tier, actions: Vec<Action>, home: &Path) {
     );
     for entry in &entries {
         let status = if entry.resolved.ok { "OK  " } else { "SKIP" };
-        let size = if entry.action.kind == Kind::Cmd {
+        let size = if entry.action.kind == Kind::Cmd && entry.action.measure.is_none() {
             String::new()
         } else {
             human(entry.size)

@@ -53,8 +53,8 @@ removed, `2` bad arguments.
 | Tier | Meaning | Examples |
 |---|---|---|
 | `safe` | Pure cache, cheap to rebuild | npm cache, dnf metadata, Go build cache |
-| `cost` | Regenerable but expensive | Playwright browsers, HuggingFace models, Chromium assets |
-| `manual` | Needs judgement | journal logs, Trash, docker prune |
+| `cost` | Regenerable but expensive | uv/pip caches, Playwright browsers, HuggingFace models |
+| `manual` | Needs judgement | journal logs, Trash, docker prune, `dnf autoremove`, old kernels |
 
 ## What it will not do
 

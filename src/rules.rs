@@ -41,6 +41,9 @@ pub struct Action {
     pub kind: Kind,
     pub target: String,
     pub label: &'static str,
+    /// Directory to size up for a `Cmd` action, so `uv cache clean` can still
+    /// report how much it would free before it runs.
+    pub measure: Option<String>,
 }
 
 impl Action {
@@ -50,7 +53,13 @@ impl Action {
             kind,
             target: target.into(),
             label,
+            measure: None,
         }
+    }
+
+    pub fn measured_by(mut self, path: impl Into<String>) -> Action {
+        self.measure = Some(path.into());
+        self
     }
 }
 
@@ -92,6 +101,15 @@ pub fn defaults(home: &Path) -> Vec<Action> {
             "npm cache",
         ),
         Action::new(Tier::Safe, Kind::Cmd, "dnf clean all", "dnf package cache"),
+        Action::new(Tier::Cost, Kind::Cmd, "uv cache clean", "uv package cache")
+            .measured_by(path(cache.join("uv"))),
+        Action::new(
+            Tier::Cost,
+            Kind::Cmd,
+            "pip3 cache purge",
+            "pip package cache",
+        )
+        .measured_by(path(cache.join("pip"))),
         Action::new(
             Tier::Cost,
             Kind::Dir,
@@ -127,6 +145,18 @@ pub fn defaults(home: &Path) -> Vec<Action> {
             Kind::Cmd,
             "journalctl --vacuum-size=200M",
             "journal logs -> 200M",
+        ),
+        Action::new(
+            Tier::Manual,
+            Kind::Cmd,
+            "dnf autoremove -y",
+            "dnf orphaned packages",
+        ),
+        Action::new(
+            Tier::Manual,
+            Kind::Cmd,
+            "dnf remove --oldinstallonly --setopt=installonly_limit=2 kernel -y",
+            "old kernels (keep 2)",
         ),
         Action::new(
             Tier::Manual,
