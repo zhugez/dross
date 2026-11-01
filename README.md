@@ -52,8 +52,8 @@ removed, `2` bad arguments.
 
 | Tier | Meaning | Examples |
 |---|---|---|
-| `safe` | Pure cache, cheap to rebuild | npm cache, dnf metadata, Go build cache |
-| `cost` | Regenerable but expensive | uv/pip caches, Playwright browsers, HuggingFace models |
+| `safe` | Pure cache, cheap to rebuild | npm + npx caches, dnf metadata, Go build cache |
+| `cost` | Regenerable but expensive | uv/pip/cargo/pnpm caches, Puppeteer and Rod browsers |
 | `manual` | Needs judgement | journal logs, Trash, docker prune, `dnf autoremove`, old kernels |
 
 ## What it will not do
@@ -67,6 +67,9 @@ removed, `2` bad arguments.
   rejects: paths outside `$HOME`, `/tmp` and `/var/tmp`; root directories;
   paths shallower than three components; and any symlink at the target or at
   one of its ancestors.
+- **No deleting installed software.** `~/.local/share/uv/tools` (uv-installed
+  tools) and `~/.rustup/toolchains` are large and look cache-like, but removing
+  them uninstalls working software. They are deliberately absent from the table.
 - **No silent success.** A target that still exists after deletion counts as a
   failure and makes the process exit non-zero. Sizes are measured with `du`
   before and after, not assumed from the earlier scan.

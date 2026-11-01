@@ -100,6 +100,12 @@ pub fn defaults(home: &Path) -> Vec<Action> {
             path(home.join(".npm/_cacache")),
             "npm cache",
         ),
+        Action::new(
+            Tier::Safe,
+            Kind::Dir,
+            path(home.join(".npm/_npx")),
+            "npx package cache",
+        ),
         Action::new(Tier::Safe, Kind::Cmd, "dnf clean all", "dnf package cache"),
         Action::new(Tier::Cost, Kind::Cmd, "uv cache clean", "uv package cache")
             .measured_by(path(cache.join("uv"))),
@@ -110,6 +116,26 @@ pub fn defaults(home: &Path) -> Vec<Action> {
             "pip package cache",
         )
         .measured_by(path(cache.join("pip"))),
+        Action::new(
+            Tier::Cost,
+            Kind::Dir,
+            path(cache.join("puppeteer")),
+            "Puppeteer browsers",
+        ),
+        Action::new(
+            Tier::Cost,
+            Kind::Dir,
+            path(cache.join("rod")),
+            "Rod browsers",
+        ),
+        Action::new(
+            Tier::Cost,
+            Kind::Dir,
+            path(home.join(".cargo/registry")),
+            "cargo registry",
+        ),
+        Action::new(Tier::Cost, Kind::Cmd, "pnpm store prune", "pnpm store")
+            .measured_by(path(home.join(".local/share/pnpm/store"))),
         Action::new(
             Tier::Cost,
             Kind::Dir,

@@ -54,29 +54,37 @@ fn log(path: &Path, message: &str) {
     let _ = writeln!(file, "unix={unix} {message}");
 }
 
+fn measure(action: &Action, home: &Path) -> Entry {
+    let resolved = resolve(action, home);
+    let size = match action.kind {
+        Kind::Cmd => action
+            .measure
+            .as_ref()
+            .map(|path| du(Path::new(path)))
+            .unwrap_or(0),
+        _ => match fs::symlink_metadata(&action.target) {
+            Ok(_) => du(Path::new(&action.target)),
+            Err(_) => 0,
+        },
+    };
+    Entry {
+        size,
+        action: action.clone(),
+        resolved,
+    }
+}
+
 fn scan(actions: Vec<Action>, home: &Path) -> Vec<Entry> {
-    let mut entries: Vec<Entry> = actions
-        .into_iter()
-        .map(|action| {
-            let resolved = resolve(&action, home);
-            let size = match action.kind {
-                Kind::Cmd => action
-                    .measure
-                    .as_ref()
-                    .map(|path| du(Path::new(path)))
-                    .unwrap_or(0),
-                _ => match fs::symlink_metadata(&action.target) {
-                    Ok(_) => du(Path::new(&action.target)),
-                    Err(_) => 0,
-                },
-            };
-            Entry {
-                size,
-                action,
-                resolved,
-            }
-        })
-        .collect();
+    let mut entries: Vec<Entry> = std::thread::scope(|scope| {
+        let handles: Vec<_> = actions
+            .iter()
+            .map(|action| scope.spawn(|| measure(action, home)))
+            .collect();
+        handles
+            .into_iter()
+            .filter_map(|handle| handle.join().ok())
+            .collect()
+    });
     entries.sort_by_key(|entry| std::cmp::Reverse(entry.size));
     entries
 }
