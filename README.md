@@ -1,6 +1,17 @@
+<div align="center">
+
 # dross
 
-Conservative disk cleaner for Fedora and WSL.
+**Conservative disk cleaner for Fedora and WSL.**
+
+Read-only by default · every deletion measured · nothing that cannot be rebuilt
+
+[![ci](https://github.com/zhugez/dross/actions/workflows/ci.yml/badge.svg)](https://github.com/zhugez/dross/actions/workflows/ci.yml)
+[![license](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![rust](https://img.shields.io/badge/rust-1.70%2B-orange.svg)](Cargo.toml)
+[![dependencies](https://img.shields.io/badge/dependencies-none-brightgreen.svg)](Cargo.toml)
+
+</div>
 
 `dross` is the scum that floats to the top of molten metal — the part you skim
 off and throw away. The tool follows the same rule: it removes only what it can
